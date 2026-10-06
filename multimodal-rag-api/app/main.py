@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 
 from app.core.config import settings
-from app.core.logging_config import configure_logging
+from app.core.logging_config import AppLogger
 from app.api.routes.health import router as health_router
 from app.api.routes.logs import router as logs_router
 
 
 # configure logging early so other imports log correctly
-configure_logging(settings.log_file)
+AppLogger.configure(settings.log_file)
 
 app = FastAPI(
     title=settings.app_name,

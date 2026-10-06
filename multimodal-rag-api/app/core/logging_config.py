@@ -3,32 +3,57 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 
-def configure_logging(log_file: str, level: int = logging.INFO):
-    """Configure root logger to write to a rotating file and console.
+class AppLogger:
+    """Configure a single application logger for console and file output."""
 
-    Creates the parent directory for `log_file` if it doesn't exist.
-    """
-    log_path = Path(log_file)
-    log_path.parent.mkdir(parents=True, exist_ok=True)
+    _logger_name = "app"
+    _configured = False
 
-    logger = logging.getLogger()
-    logger.setLevel(level)
+    @classmethod
+    def configure(cls, log_file: str, level: int = logging.INFO) -> logging.Logger:
+        """Set up the app logger once and return it."""
+        log_path = Path(log_file)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # avoid adding multiple handlers if called more than once
-    if any(isinstance(h, RotatingFileHandler) and h.baseFilename == str(log_path) for h in logger.handlers if hasattr(h, "baseFilename")):
-        return
+        logger = logging.getLogger(cls._logger_name)
+        logger.setLevel(level)
+        logger.propagate = False
 
-    fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+        if cls._configured and logger.handlers:
+            return logger
 
-    fh = RotatingFileHandler(str(log_path), maxBytes=5 * 1024 * 1024, backupCount=5, encoding="utf-8")
-    fh.setLevel(level)
-    fh.setFormatter(fmt)
-    logger.addHandler(fh)
+        for handler in list(logger.handlers):
+            logger.removeHandler(handler)
+            handler.close()
 
-    ch = logging.StreamHandler()
-    ch.setLevel(level)
-    ch.setFormatter(fmt)
-    logger.addHandler(ch)
+        formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
+        file_handler = RotatingFileHandler(
+            str(log_path),
+            maxBytes=5 * 1024 * 1024,
+            backupCount=5,
+            encoding="utf-8",
+        )
+        file_handler.setLevel(level)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(level)
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+
+        cls._configured = True
+        return logger
+
+    @classmethod
+    def get_logger(cls) -> logging.Logger:
+        return logging.getLogger(cls._logger_name)
 
 
-__all__ = ["configure_logging"]
+def configure_logging(log_file: str, level: int = logging.INFO) -> logging.Logger:
+    """Backward-compatible wrapper for the class-based configuration."""
+    return AppLogger.configure(log_file, level)
+
+
+__all__ = ["AppLogger", "configure_logging"]
