@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     # path to the application log file
     log_file: str = "logs/app.log"
     pinecone_api_key: str
+    pinecone_index_name: str = "multimodal-rag-dense"
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"
