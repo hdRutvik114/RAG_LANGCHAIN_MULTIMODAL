@@ -1,3 +1,5 @@
+
+import hashlib
 from pathlib import Path
 
 from langchain_core.documents import Document
@@ -9,35 +11,61 @@ from app.vectorstore.pinecone import PineconeVectorStore
 
 
 class IngestionService:
-
     def __init__(self):
         self.embedding_service = TextEmbeddingService()
         self.vector_store = PineconeVectorStore()
 
+    @staticmethod
+    def _create_document_id(file_path: str) -> str:
+        normalized_path = str(Path(file_path).resolve()).lower()
+        return hashlib.sha256(
+            normalized_path.encode("utf-8")
+        ).hexdigest()
+
+    @staticmethod
+    def _create_content_hash(text: str) -> str:
+        return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
     def ingest_file(self, file_path: str) -> dict:
-        text = load_text_file(file_path)
+        path = Path(file_path).resolve()
+        text = load_text_file(str(path))
 
         if not text.strip():
             raise ValueError("File contains no text")
 
+        document_id = self._create_document_id(str(path))
+        content_hash = self._create_content_hash(text)
+        source = path.name
+
         document = Document(
             page_content=text,
-            metadata={"source": Path(file_path).name},
+            metadata={
+                "source": source,
+                "document_id": document_id,
+                "content_hash": content_hash,
+            },
         )
 
         chunks = split_document(document)
-        texts = [chunk.page_content for chunk in chunks]
 
+        if not chunks:
+            raise ValueError("Document produced no chunks")
+
+        texts = [chunk.page_content for chunk in chunks]
         embeddings = self.embedding_service.embed_documents(texts)
 
-        self.vector_store.upsert_chunks(
+        vector_ids = self.vector_store.upsert_chunks(
             texts=texts,
             embeddings=embeddings,
-            source=Path(file_path).name,
+            document_id=document_id,
+            content_hash=content_hash,
+            source=source,
         )
 
         return {
-            "filename": Path(file_path).name,
+            "filename": source,
+            "document_id": document_id,
+            "content_hash": content_hash,
             "chunks_created": len(chunks),
-            "chunks_stored": len(embeddings),
+            "chunks_stored": len(vector_ids),
         }
