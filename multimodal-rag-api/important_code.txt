@@ -1,0 +1,169 @@
+MAIN CODE SUMMARY
+=================
+
+1) app/main.py
+----------------
+from fastapi import FastAPI
+
+from app.core.config import settings
+from app.core.logging_config import AppLogger
+from app.api.routes.health import router as health_router
+from app.api.routes.logs import router as logs_router
+
+AppLogger.configure(settings.log_file)
+
+app = FastAPI(
+    title=settings.app_name,
+    version="1.0.0",
+)
+
+app.include_router(health_router)
+app.include_router(logs_router)
+
+What it does:
+- creates the FastAPI application
+- configures logging
+- registers API routes
+
+2) app/core/config.py
+---------------------
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+class Settings(BaseSettings):
+    app_name: str = "Multimodal RAG API"
+    environment: str = "development"
+    log_file: str = "logs/app.log"
+    pinecone_api_key: str
+    pinecone_index_name: str = "multimodal-rag-dense"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore"
+    )
+
+settings = Settings()
+
+What it does:
+- reads environment variables from .env
+- stores app config such as Pinecone credentials and index name
+
+3) app/api/routes/health.py
+---------------------------
+from fastapi import APIRouter, Depends
+from app.api.dependencies import get_settings
+from app.core.config import Settings
+
+router = APIRouter()
+
+@router.get("/health")
+def health_check(config: Settings = Depends(get_settings)):
+    return {
+        "status": "healthy",
+        "environment": config.environment,
+    }
+
+What it does:
+- exposes /health endpoint
+- returns the app status
+
+4) app/api/routes/logs.py
+-------------------------
+@router.get("/logs", response_class=PlainTextResponse)
+def get_logs(lines: int = Query(200, ge=1, le=10000), config: Settings = Depends(get_settings)):
+    if config.environment.lower() != "development":
+        raise HTTPException(status_code=403, detail="Log access is disabled in this environment")
+
+What it does:
+- returns recent application logs from the log file
+- blocks access outside development mode
+
+5) app/services/ingestionservice.py
+-----------------------------------
+class IngestionService:
+    def __init__(self):
+        self.embedding_service = TextEmbeddingService()
+        self.vector_store = PineconeVectorStore()
+
+    def ingest_file(self, file_path: str) -> dict:
+        text = load_text_file(file_path)
+        document = Document(page_content=text, metadata={"source": Path(file_path).name})
+        chunks = split_document(document)
+        embeddings = self.embedding_service.embed_documents(texts)
+        self.vector_store.upsert_chunks(...)
+
+What it does:
+- loads text file
+- chunks the document
+- embeds every chunk
+- stores the vectors in Pinecone
+
+6) app/services/retrival_service.py
+----------------------------------
+class RetrievalService:
+    def __init__(self):
+        self.embedding_service = TextEmbeddingService()
+        self.vector_store = PineconeVectorStore()
+
+    def retrieve(self, query: str, top_k: int = 5) -> list[dict]:
+        query_embedding = self.embedding_service.embed_query(query)
+        results = self.vector_store.search(query_embedding=query_embedding, top_k=top_k)
+
+What it does:
+- takes a user question
+- converts it into embedding
+- searches the vector store for the most relevant chunks
+
+7) app/ingestion/loader.py
+--------------------------
+def load_text_file(file_path: str) -> str:
+    path = Path(file_path)
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
+    return path.read_text(encoding="utf-8")
+
+What it does:
+- reading source content from disk
+
+8) app/ingestion/chunker.py
+---------------------------
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=50)
+
+What it does:
+- breaks long documents into smaller chunk sizes for better retrieval
+
+9) app/embeddings/text_embeddings.py
+------------------------------------
+class TextEmbeddingService:
+    def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
+        self.model = HuggingFaceEmbeddings(model_name=model_name)
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self.model.embed_documents(texts)
+
+    def embed_query(self, query: str) -> list[float]:
+        return self.model.embed_query(query)
+
+What it does:
+- creates vector embeddings for both document chunks and user queries
+
+10) app/vectorstore/pinecone.py
+------------------------------
+class PineconeVectorStore:
+    def __init__(self):
+        self.client = Pinecone(api_key=settings.pinecone_api_key)
+        self.index = self.client.Index(settings.pinecone_index_name)
+
+    def upsert_chunks(...):
+        self.index.upsert(vectors=vectors)
+
+    def search(...):
+        results = self.index.query(vector=query_embedding, top_k=top_k, include_metadata=True)
+
+What it does:
+- stores vectors in Pinecone
+- searches for similar content using vector similarity
+
+FINAL SUMMARY:
+The main project logic is in the FastAPI app, config, ingestion, embeddings, vector store, and retrieval services.
+These are the core files that actually implement the RAG workflow.

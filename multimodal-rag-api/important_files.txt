@@ -1,0 +1,56 @@
+IMPORTANT PROJECT FILES
+=======================
+
+These are the main files written for this project.
+
+1. app/main.py
+   Purpose: FastAPI app entry point.
+   Code: creates the app, configures logging, and registers routes.
+
+2. app/core/config.py
+   Purpose: app settings and environment configuration.
+   Code: defines Settings, .env loading, Pinecone keys and index name.
+
+3. app/api/dependencies.py
+   Purpose: dependency injection for app settings.
+   Code: returns the global settings object.
+
+4. app/api/routes/health.py
+   Purpose: health check endpoint.
+   Code: /health returns status and environment.
+
+5. app/api/routes/logs.py
+   Purpose: API route to fetch app logs.
+   Code: returns last N log lines in development mode only.
+
+6. app/services/ingestionservice.py
+   Purpose: document ingestion pipeline.
+   Code: reads file, splits into chunks, embeds chunk text, stores vectors.
+
+7. app/services/retrival_service.py
+   Purpose: retrieval logic.
+   Code: embeds the user query and searches the vector database.
+
+8. app/ingestion/loader.py
+   Purpose: reads text data files.
+   Code: loads file content from disk.
+
+9. app/ingestion/chunker.py
+   Purpose: splits long documents into chunks.
+   Code: uses RecursiveCharacterTextSplitter.
+
+10. app/embeddings/text_embeddings.py
+    Purpose: embedding generator.
+    Code: uses HuggingFaceEmbeddings to create embeddings for text.
+
+11. app/vectorstore/pinecone.py
+    Purpose: vector database integration with Pinecone.
+    Code: stores embeddings and searches by semantic similarity.
+
+12. README.md
+    Purpose: project overview and architecture explanation.
+    Code: documents what the project is aiming to build.
+
+IMPORTANT NOTE:
+- Unnecessary files like __init__.py, __pycache__, logs, and generated temporary files were ignored.
+- The real project logic lives in the files above.
