@@ -11,10 +11,13 @@ from app.vectorstore.pinecone import PineconeVectorStore
 
 
 class IngestionService:
-    def __init__(self):
-        self.embedding_service = TextEmbeddingService()
-        self.vector_store = PineconeVectorStore()
-
+    def __init__(
+        self,
+        embedding_service: TextEmbeddingService,
+        vector_store: PineconeVectorStore,
+    ):
+        self.embedding_service = embedding_service
+        self.vector_store = vector_store
     @staticmethod
     def _create_document_id(file_path: str) -> str:
         normalized_path = str(Path(file_path).resolve()).lower()
