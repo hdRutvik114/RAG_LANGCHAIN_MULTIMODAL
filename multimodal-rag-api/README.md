@@ -1,92 +1,103 @@
 # Multimodal RAG API
 
-This project is a practical attempt to build a smart retrieval system that can work with more than just text. The goal is simple: let an application read through documents, find the most relevant pieces of information, and answer questions using that context instead of guessing from memory alone.
+This repository is a Python-based Retrieval-Augmented Generation (RAG) backend focused on building a working text-first multimodal retrieval pipeline. The current implementation is structured around loading documents, splitting them into chunks, generating embeddings, storing them in Pinecone, and retrieving the most relevant content for a query.
 
-In other words, this is a Retrieval-Augmented Generation (RAG) API built for multimodal data. It is designed to support text-heavy content and future visual inputs, so the system can connect user questions to the most useful information from a knowledge base and ground the response in real context.
+## What is implemented
 
-## What we are building
+The project currently includes the following core pieces:
 
-We are building a backend service that can:
+- FastAPI application setup with health and logs endpoints
+- environment-based configuration for app settings
+- document loading from local files
+- recursive text chunking for indexed content
+- embedding generation using Hugging Face sentence-transformers
+- Pinecone vector storage and semantic search
+- ingestion workflow that hashes documents and stores chunk metadata
 
-- ingest source content from files and documents
-- split larger content into smaller, manageable chunks
-- convert text into embeddings
-- store vector representations in a vector database
-- retrieve the most relevant chunks for a query
-- use those chunks to support smarter AI answers
+## Project structure
 
-The idea is not just to build a chatbot. It is to build a retrieval layer that helps an AI system answer questions more accurately, consistently, and with better context.
+- `app/main.py` — FastAPI application entry point
+- `app/core/config.py` — environment and app configuration
+- `app/core/logging_config.py` — logging setup
+- `app/ingestion/loader.py` — file text loading utilities
+- `app/ingestion/chunker.py` — recursive chunk splitting logic
+- `app/embeddings/text_embeddings.py` — embedding generation service
+- `app/vectorstore/pinecone.py` — Pinecone index integration and vector search
+- `app/services/ingestionservice.py` — main ingestion pipeline
+- `app/api/routes/health.py` — health check endpoint
+- `app/api/routes/logs.py` — basic logging endpoint
 
-## Why this matters
+## Current ingestion flow
 
-Traditional AI models can be useful, but they often do not know your private documents, local knowledge, or domain-specific information unless you give them that context. This project solves that by creating a system that fetches relevant information before generating a response.
+The current working flow is:
 
-That makes the output more grounded, more useful, and far more relevant in real-world business or research scenarios.
+1. Read a text file from disk
+2. Validate that the file contains content
+3. Create a document ID and content hash
+4. Split the text into chunks using `RecursiveCharacterTextSplitter`
+5. Generate embeddings for each chunk
+6. Upsert the vectors into Pinecone with metadata such as source, document ID, and chunk index
+7. Return summary counts about the ingestion process
 
-## The core idea
-
-At a high level, the flow looks like this:
-
-1. Data is loaded from files or document sources.
-2. The content is chunked into smaller sections for better retrieval.
-3. Each chunk is embedded into a vector space.
-4. Those embeddings are stored in Pinecone or a similar vector database.
-5. A user asks a question.
-6. The system converts the question into an embedding and searches for matching chunks.
-7. The most relevant chunks are retrieved.
-8. The model uses those chunks as context for a final answer.
-
-This is the heart of a modern RAG system.
-
-## What this repository includes
-
-This repository is set up as a FastAPI-based backend with a modular structure for:
-
-- app configuration and environment settings
-- logging setup
-- document ingestion and chunking
-- embedding generation
-- vector storage integration
-- retrieval logic preparation
-- API routes for health and logging
-
-The structure is intentionally organized so the project can grow from a simple proof of concept into a more complete multimodal knowledge system.
-
-## Current direction
-
-The project is currently focused on building the foundation for a multimodal retrieval workflow. That means the backend is being structured around:
-
-- clean API boundaries
-- reusable service modules
-- scalable retrieval and indexing patterns
-- future support for image and cross-modal understanding
-
-The long-term goal is to support content beyond plain text, including images and richer documents, while still keeping the retrieval pipeline reliable and easy to extend.
+This is a solid foundation for later extending the pipeline to richer multimodal content such as images or non-text documents.
 
 ## Tech stack
 
-The project is using a Python backend with FastAPI and vector search tooling, with Pinecone as the likely storage layer for embeddings. The codebase is organized in a way that supports adding more advanced retrieval, reranking, and generation components later.
+- Python
+- FastAPI
+- LangChain
+- Hugging Face embeddings
+- Pinecone
+- Pydantic settings
 
-## Getting started
+## Environment setup
 
-Set up your environment, install dependencies, and add your environment variables such as your Pinecone API key inside a .env file.
+Create a `.env` file in the project root with the required configuration values, for example:
 
-Then run the app through the FastAPI entry point and start building out the ingestion and retrieval flow.
+```env
+APP_NAME=Multimodal RAG API
+ENVIRONMENT=development
+PINECONE_API_KEY=your_pinecone_api_key
+PINECONE_INDEX_NAME=multimodal-rag-dense
+DATABASE_URL=your_postgres_connection_string
+DATABASE_URL_POOLED=your_pooled_postgres_connection_string
+```
 
-## Why this project is useful
+The application reads these values from the environment through the settings object in `app/core/config.py`.
 
-This is not just a demo project. It is a good foundation for building:
+## Running the app
 
-- document Q&A systems
-- internal knowledge assistants
-- enterprise search tools
-- multimodal AI applications
-- smarter grounding for LLM-based workflows
+From the project folder:
 
-The main value is that it helps AI systems answer based on real, relevant information rather than relying on generic model knowledge alone.
+```bash
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+Then the API will be available locally on the default FastAPI port.
+
+## Health check
+
+The app currently exposes a health endpoint:
+
+- `GET /health`
+
+This returns the service status and current environment.
+
+## Current status
+
+This project is in the early-to-mid development stage: the foundation for a document-based RAG pipeline is in place and the code is organized around modular services. The project is positioned for expansion into more advanced retrieval and multimodal capabilities while keeping a clean backend structure.
+
+## Future direction
+
+Planned extensions include:
+
+- more retrieval and reranking layers
+- support for image and multimodal embeddings
+- stronger API endpoints for query and ingestion workflows
+- database-backed metadata management
+- improved evaluation and search quality tuning
 
 ## Summary
 
-This project is a multimodal RAG API that aims to bridge the gap between raw information and useful AI answers. It is designed to pull the right context from documents and other content sources, retrieve the most relevant pieces, and help a model respond in a way that is grounded, precise, and business-ready.
-
-The bigger picture is simple: build an intelligent search and answer system that understands the content available to it and uses that content to make better decisions and provide better answers.
+The repository already contains a usable text-based RAG foundation: loading, chunking, embedding, vector storage, and retrieval logic are all represented in the current code. The system is ready for the next stage of development, where it can evolve from a document-search backend into a broader multimodal knowledge system.
