@@ -108,16 +108,16 @@ class IngestionService:
             session.commit()
 
         try:
-            document = Document(
-                page_content=text,
-                metadata={
+            chunks = []
+
+            for document in documents:
+                document.metadata.update({
                     "source": source,
                     "document_id": document_id,
                     "content_hash": content_hash,
-                },
-            )
-
-            chunks = split_document(document)
+                })
+            
+                chunks.extend(split_document(document))
             if not chunks:
                 raise ValueError("Document produced no chunks")
 
