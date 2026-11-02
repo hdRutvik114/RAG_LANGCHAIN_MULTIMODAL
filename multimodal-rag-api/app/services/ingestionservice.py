@@ -7,7 +7,7 @@ from langchain_core.documents import Document
 from app.core.database import SessionLocal
 from app.embeddings.text_embeddings import TextEmbeddingService
 from app.ingestion.chunker import split_document
-from app.ingestion.loader import load_text_file
+from app.ingestion.loader import load_text_file,load_pdf_documents
 from app.models.document import Document as DocumentRecord
 from app.repositories.document_repository import DocumentRepository
 from app.vectorstore.pinecone import PineconeVectorStore
@@ -36,12 +36,34 @@ class IngestionService:
     def ingest_file(self, file_path: str) -> dict:
         path = Path(file_path).resolve()
         text = load_text_file(str(path))
-
-        if not text.strip():
-            raise ValueError("File contains no text")
+        
+        if path.suffix.lower() == ".pdf":
+            documents = load_pdf_documents(str(path))
+        
+        elif path.suffix.lower() == ".txt":
+            text = load_text_file(str(path))
+        
+            if not text.strip():
+                raise ValueError("File contains no text")
+        
+            documents = [
+                Document(
+                    page_content=text,
+                    metadata={"source": path.name},
+                )
+            ]
+        
+        else:
+            raise ValueError("Only PDF and TXT files are         supported")
+        
+        # Hash the complete extracted content, including         page boundaries.
+        full_text = "\n".join(
+            f"Page {doc.metadata.get('page', 1)}\n{doc.       page_content}"
+            for doc in documents
+        )
 
         document_id = self._create_document_id(str(path))
-        content_hash = self._create_content_hash(text)
+        content_hash = self._create_content_hash(full_text)
         source = path.name
 
         # Read the existing registry record and mark ingestion as processing.
