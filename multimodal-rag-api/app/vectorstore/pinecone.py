@@ -27,7 +27,11 @@ class PineconeVectorStore:
         document_id: str,
         content_hash: str,
         source: str,
+        chunk_metadata: list[dict] | None = None
     ) -> list[str]:
+        if chunk_metadata is None:
+            chunk_metadata = [{} for _ in texts]
+        
         if len(texts) != len(embeddings):
             raise ValueError("Texts and embeddings must have the same length")
 
@@ -55,6 +59,7 @@ class PineconeVectorStore:
                     "document_id": document_id,
                     "content_hash": content_hash,
                     "chunk_index": chunk_index,
+                    **chunk_metadata[chunk_index],
                 },
             }
             for chunk_index, (text, embedding, vector_id) in enumerate(
