@@ -136,6 +136,11 @@ class IngestionService:
                 document_id=document_id,
                 content_hash=content_hash,
                 source=source,
+                chunk_metadata=[
+                {"page": chunk.metadata["page"]}
+                if "page" in chunk.metadata else {}
+                for chunk in chunks
+                ],
             )
 
             if len(vector_ids) != len(texts):
