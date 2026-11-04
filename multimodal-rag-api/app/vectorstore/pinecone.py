@@ -88,17 +88,25 @@ class PineconeVectorStore:
         self,
         query_embedding: list[float],
         top_k: int = 5,
+        document_id: str | None = None,
     ) -> list[dict]:
         if len(query_embedding) != 384:
             raise ValueError("Expected 384-dimensional query embeddings")
 
         if not 1 <= top_k <= 50:
             raise ValueError("top_k must be between 1 and 50")
+    #this is the code that was added to the retrival_service.py file to allow for filtering by document_id in the search method of the PineconeVectorStore class.
+    # which is used in the retrieve method of the RetrievalService class. The filter_conditions dictionary is created to hold the filter conditions for the search query. If a document_id is provided, it adds a filter condition to only return results that match the specified document_id. The search method then uses this filter_conditions dictionary when querying the Pinecone index.
+        filter_conditions = {}
+        if document_id is not None:
+            filter_conditions["document_id"] = {"$eq": document_id}
 
+        
         results = self.index.query(
             vector=query_embedding,
             top_k=top_k,
             include_metadata=True,
+            filter=filter_conditions,
         )
 
         return [
@@ -107,9 +115,12 @@ class PineconeVectorStore:
                 "score": match.score,
                 "text": (match.metadata or {}).get("text", ""),
                 "source": (match.metadata or {}).get("source", "unknown"),
+                "page": (match.metadata or {}).get("page"),
                 "document_id": (match.metadata or {}).get("document_id", ""),
                 "content_hash": (match.metadata or {}).get("content_hash", ""),
                 "chunk_index": (match.metadata or {}).get("chunk_index", -1),
+                "chunk_index": (match.metadata or {}).get("chunk_index", -1),
+                
             }
             for match in results.matches
         ]
