@@ -12,7 +12,7 @@ class RetrievalService:
         self.embedding_service = embedding_service
         self.vector_store = vector_store
 
-    def retrieve(self, query: str, top_k: int = 5) -> list[dict]:
+    def retrieve(self, query: str, top_k: int = 5,document_id: str | None = None,) -> list[dict]:
         if not query.strip():
             raise ValueError("Query cannot be empty")
 
@@ -24,4 +24,5 @@ class RetrievalService:
         return self.vector_store.search(
             query_embedding=query_embedding,
             top_k=top_k,
+             document_id=document_id,
         )
