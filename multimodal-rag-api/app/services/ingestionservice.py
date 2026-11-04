@@ -7,7 +7,7 @@ from langchain_core.documents import Document
 from app.core.database import SessionLocal
 from app.embeddings.text_embeddings import TextEmbeddingService
 from app.ingestion.chunker import split_document
-from app.ingestion.loader import load_text_file,load_pdf_documents
+from app.ingestion.loader import load_pdf_documents
 from app.models.document import Document as DocumentRecord
 from app.repositories.document_repository import DocumentRepository
 from app.vectorstore.pinecone import PineconeVectorStore
@@ -35,13 +35,13 @@ class IngestionService:
 
     def ingest_file(self, file_path: str) -> dict:
         path = Path(file_path).resolve()
-        text = load_text_file(str(path))
+        text = load_pdf_documents(str(path))
         
         if path.suffix.lower() == ".pdf":
             documents = load_pdf_documents(str(path))
         
         elif path.suffix.lower() == ".txt":
-            text = load_text_file(str(path))
+            text = load_pdf_documents(str(path))
         
             if not text.strip():
                 raise ValueError("File contains no text")
