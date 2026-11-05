@@ -31,31 +31,41 @@ class RAGService:
 
         context_parts = []
         sources = []
-
+        source_ids = {}
+        
         for chunk in retrieved_chunks:
+            source = chunk.get("source", "unknown")
             page = chunk.get("page")
-
+            doc_id = chunk.get("document_id", "")
+        
+            source_key = (doc_id, source, page)
+        
+            if source_key not in source_ids:
+                source_id = f"S{len(source_ids) + 1}"
+                source_ids[source_key] = source_id
+        
+                sources.append({
+                    "id": source_id,
+                    "source": source,
+                    "page": page,
+                    "document_id": doc_id,
+                    "score": chunk.get("score"),
+                })
+        
+            source_id = source_ids[source_key]
+        
             context_parts.append(
-                f"[Page {page}]\n{chunk['text']}"
+                f"[{source_id}] Source: {source} | Page: {page}\n"
+                f"{chunk['text']}"
             )
-
-            sources.append({
-                "source": chunk.get("source"),
-                "page": page,
-                "score": chunk.get("score"),
-            })
-
-        context = "\n\n".join(context_parts)
-
+        context = "\n".join(context_parts)
         answer = self.generation_service.generate(
             question=question,
             context=context,
         )
 
         return {
-            "question": question,
-            "answer": answer,
-            "sources": sources,
-        }
-        
-        
+                    "question": question,
+                    "answer": answer,
+                    "sources": sources,
+                }
