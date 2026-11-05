@@ -8,6 +8,7 @@ from app.llm.model_provider import get_chat_model
 from app.services.retrival_service import RetrievalService
 from app.services.generation_service import GenerationService
 from app.services.rag_service import RAGService
+from app.reranking.cross_encoder import CrossEncoderReranker
 
 
 def get_settings() -> Settings:
@@ -18,6 +19,9 @@ def get_settings() -> Settings:
 def get_embedding_service() -> TextEmbeddingService:
     return TextEmbeddingService()
 
+@lru_cache(maxsize=1)
+def get_reranker() -> CrossEncoderReranker:
+    return CrossEncoderReranker()
 
 @lru_cache(maxsize=1)
 def get_vector_store() -> PineconeVectorStore:
@@ -28,6 +32,7 @@ def get_retrieval_service() -> RetrievalService:
     return RetrievalService(
         embedding_service=get_embedding_service(),
         vector_store=get_vector_store(),
+         reranker=get_reranker(),
     )
 
 
