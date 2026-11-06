@@ -16,11 +16,13 @@ class RAGService:
         document_id: str | None = None,
     ) -> dict:
 
-        retrieved_chunks = self.retrieval_service.retrieve(
+        retrieved_chunks = self.retrieval_service.retrieve_reranked(
             query=question,
             top_k=top_k,
             document_id=document_id,
         )
+        
+        
 
         if not retrieved_chunks:
             return {
