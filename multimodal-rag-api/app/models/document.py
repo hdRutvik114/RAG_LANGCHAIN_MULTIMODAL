@@ -39,3 +39,35 @@ class Document(Base):
         onupdate=func.now(),
         nullable=False,
     )
+    
+    
+class DocumentChunk(Base):
+    __tablename__ = "document_chunks"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+
+    document_id: Mapped[str] = mapped_column(
+        String(64), index=True, nullable=False
+    )
+
+    content_hash: Mapped[str] = mapped_column(
+        String(64), nullable=False
+    )
+
+    chunk_index: Mapped[int] = mapped_column(
+        nullable=False
+    )
+
+    text: Mapped[str] = mapped_column(
+        Text, nullable=False
+    )
+
+    page: Mapped[int | None] = mapped_column(
+        nullable=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
