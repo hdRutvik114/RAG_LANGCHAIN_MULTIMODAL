@@ -57,6 +57,7 @@ class RetrievalService:
             top_k=candidate_k,
             document_id=document_id,
         )
+        # print("documents which will be sent for reranking:", candidates)
 
         return self.reranker.rerank(
             query=query,
