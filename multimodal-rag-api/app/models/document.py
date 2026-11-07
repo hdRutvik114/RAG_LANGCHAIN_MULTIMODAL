@@ -44,27 +44,37 @@ class Document(Base):
 class DocumentChunk(Base):
     __tablename__ = "document_chunks"
 
+    __table_args__ = (
+        UniqueConstraint(
+            "document_id",
+            "content_hash",
+            "chunk_index",
+            name="uq_document_chunk_version_index",
+        ),
+    )
+
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
+    vector_id: Mapped[str] = mapped_column(
+        String(64), unique=True, index=True, nullable=False
+    )
+
     document_id: Mapped[str] = mapped_column(
-        String(64), index=True, nullable=False
+        String(64),
+        ForeignKey("documents.document_id"),
+        index=True,
+        nullable=False,
     )
 
     content_hash: Mapped[str] = mapped_column(
         String(64), nullable=False
     )
 
-    chunk_index: Mapped[int] = mapped_column(
-        nullable=False
-    )
+    chunk_index: Mapped[int] = mapped_column(nullable=False)
 
-    text: Mapped[str] = mapped_column(
-        Text, nullable=False
-    )
+    text: Mapped[str] = mapped_column(Text, nullable=False)
 
-    page: Mapped[int | None] = mapped_column(
-        nullable=True
-    )
+    page: Mapped[int | None] = mapped_column(nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
