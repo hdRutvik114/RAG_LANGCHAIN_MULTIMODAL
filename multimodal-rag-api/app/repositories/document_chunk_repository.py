@@ -1,7 +1,7 @@
 from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 
-from app.models.document import DocumentChunk
+from app.models.document import DocumentChunk, Document
 
 
 class DocumentChunkRepository:
@@ -40,3 +40,27 @@ class DocumentChunkRepository:
             DocumentChunk.content_hash == content_hash,
         )
         self.session.execute(statement)
+    
+    def get_current_chunks(self, document_id: str | None = None):
+        statement = (
+            select(DocumentChunk)
+            .join(
+                Document,
+                Document.document_id == DocumentChunk.document_id,
+            )
+            .where(
+                Document.current_content_hash == DocumentChunk.content_hash,
+                Document.status == "completed",
+            )
+            .order_by(
+                DocumentChunk.document_id,
+                DocumentChunk.chunk_index,
+            )
+        )
+    
+        if document_id:
+            statement = statement.where(
+                DocumentChunk.document_id == document_id
+            )
+    
+        return list(self.session.scalars(statement).all())
