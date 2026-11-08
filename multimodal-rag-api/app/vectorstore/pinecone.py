@@ -124,3 +124,6 @@ class PineconeVectorStore:
             }
             for match in results.matches
         ]
+    
+    def delete_all_vectors(self):
+        self.index.delete(delete_all=True)
