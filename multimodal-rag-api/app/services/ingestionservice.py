@@ -8,8 +8,9 @@ from app.core.database import SessionLocal
 from app.embeddings.text_embeddings import TextEmbeddingService
 from app.ingestion.chunker import split_document
 from app.ingestion.loader import load_pdf_documents
-from app.models.document import Document as DocumentRecord
+from app.models.document import Document as DocumentRecord, DocumentChunk
 from app.repositories.document_repository import DocumentRepository
+from app.repositories.document_chunk_repository import DocumentChunkRepository
 from app.vectorstore.pinecone import PineconeVectorStore
 
 
@@ -142,22 +143,16 @@ class IngestionService:
                 for chunk in chunks
                 ],
             )
-
-            if len(vector_ids) != len(texts):
+            
+            if len(vector_ids) != len(chunks):
                 raise RuntimeError(
                     "Not all document chunks were stored"
                 )
 
-            # Remove the previous version only after the new upsert succeeds.
-            if previous_hash and previous_hash != content_hash:
-                self.vector_store.delete_document_version(
-                    document_id=document_id,
-                    content_hash=previous_hash,
-                )
-
-            # Mark this version current only after vector operations succeed.
             with SessionLocal() as session:
                 repository = DocumentRepository(session)
+                chunk_repository = DocumentChunkRepository(session)
+
                 record = repository.get_by_document_id(document_id)
 
                 if record is None:
@@ -165,12 +160,43 @@ class IngestionService:
                         "Document registry record disappeared"
                     )
 
+                chunk_records = [
+                    DocumentChunk(
+                        vector_id=vector_id,
+                        document_id=document_id,
+                        content_hash=content_hash,
+                        chunk_index=index,
+                        text=chunk.page_content,
+                        page=chunk.metadata.get("page"),
+                    )
+                    for index, (vector_id, chunk) in enumerate(
+                        zip(vector_ids, chunks)
+                    )
+                ]
+
+                chunk_repository.create_many(chunk_records)
+
                 record.current_content_hash = content_hash
                 record.status = "completed"
                 record.chunk_count = len(vector_ids)
                 record.error_message = None
+
                 repository.save(record)
                 session.commit()
+
+            if previous_hash and previous_hash != content_hash:
+                self.vector_store.delete_document_version(
+                    document_id=document_id,
+                    content_hash=previous_hash,
+                )
+
+                with SessionLocal() as session:
+                    chunk_repository = DocumentChunkRepository(session)
+                    chunk_repository.delete_document_version(
+                        document_id=document_id,
+                        content_hash=previous_hash,
+                    )
+                    session.commit()
 
             return {
                 "filename": source,
