@@ -36,31 +36,30 @@ class IngestionService:
 
     def ingest_file(self, file_path: str) -> dict:
         path = Path(file_path).resolve()
-        text = load_pdf_documents(str(path))
+        
         
         if path.suffix.lower() == ".pdf":
             documents = load_pdf_documents(str(path))
         
         elif path.suffix.lower() == ".txt":
-            text = load_pdf_documents(str(path))
+            text = path.read_text(encoding="utf-8")
         
             if not text.strip():
                 raise ValueError("File contains no text")
-        
+
             documents = [
                 Document(
                     page_content=text,
                     metadata={"source": path.name},
                 )
             ]
-        
+
         else:
-            raise ValueError("Only PDF and TXT files are         supported")
-        
+            raise ValueError("Only PDF and TXT files are supported")
         # Hash the complete extracted content, including         page boundaries.
         full_text = "\n".join(
-            f"Page {doc.metadata.get('page', 1)}\n{doc.       page_content}"
-            for doc in documents
+        f"Page {doc.metadata.get('page', 1)}\n{doc.page_content}"
+        for doc in documents
         )
 
         document_id = self._create_document_id(str(path))
