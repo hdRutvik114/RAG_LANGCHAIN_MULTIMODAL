@@ -42,8 +42,8 @@ class DocumentChunkRepository:
         self.session.execute(statement)
     
     def get_current_chunks(self, document_id: str | None = None):
-        statement = (
-            select(DocumentChunk)
+        statement = ( 
+            select(DocumentChunk, Document.source)
             .join(
                 Document,
                 Document.document_id == DocumentChunk.document_id,
@@ -63,4 +63,4 @@ class DocumentChunkRepository:
                 DocumentChunk.document_id == document_id
             )
     
-        return list(self.session.scalars(statement).all())
+        return list(self.session.execute(statement).all())
