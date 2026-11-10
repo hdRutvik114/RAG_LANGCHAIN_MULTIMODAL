@@ -33,6 +33,7 @@ class CrossEncoderReranker:
                 "rerank_score": float(score),
             })
 
+        # print("IN crosss encoder:", ranked_documents)
         ranked_documents.sort(
             key=lambda item: item["rerank_score"],
             reverse=True,
