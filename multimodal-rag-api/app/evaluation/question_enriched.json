@@ -1,0 +1,191 @@
+[
+  {
+    "question": "How does scaled dot-product attention work?",
+    "relevant_pages": [
+      4,
+      5
+    ],
+    "expected_answer": "Scaled dot-product attention takes query and key vectors of dimension d_k and value vectors of dimension d_v. It computes query–key dot products, divides the scores by the square root of d_k, applies softmax to obtain attention weights, and uses those weights to calculate a weighted sum of the value vectors.",
+    "reference_context": [
+      "The input consists of queries and keys of dimension d_k, and values of dimension d_v. We compute the dot products of the query with all keys, divide each by the square root of d_k, and apply a softmax function to obtain the weights on the values.",
+      "Attention(Q, K, V) = softmax(QK^T / sqrt(d_k)) V."
+    ]
+  },
+  {
+    "question": "Why are queries, keys, and values used in attention?",
+    "relevant_pages": [
+      3,
+      4,
+      5
+    ],
+    "expected_answer": "A query represents what a position is looking for, keys provide the information used to measure compatibility with that query, and values contain the information to be combined. Attention assigns each value a weight based on the compatibility between the query and its corresponding key, then returns a weighted sum of the values.",
+    "reference_context": [
+      "An attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors. The output is computed as a weighted sum of the values, where the weight assigned to each value is computed by a compatibility function of the query with the corresponding key."
+    ]
+  },
+  {
+    "question": "How is attention calculated using query and key vectors?",
+    "relevant_pages": [
+      4,
+      5
+    ],
+    "expected_answer": "The query is compared with each key using a dot product. Each score is scaled by dividing by sqrt(d_k), and softmax converts the scaled scores into normalized attention weights. Those weights are then applied to the value vectors to produce the output.",
+    "reference_context": [
+      "We compute the dot products of the query with all keys, divide each by the square root of d_k, and apply a softmax function to obtain the weights on the values.",
+      "Attention(Q, K, V) = softmax(QK^T / sqrt(d_k)) V."
+    ]
+  },
+  {
+    "question": "Why does the Transformer use multiple attention heads?",
+    "relevant_pages": [
+      3,
+      4,
+      5
+    ],
+    "expected_answer": "Multi-head attention lets the model attend to information from different representation subspaces and positions in parallel. The projected outputs from the heads are concatenated and linearly projected. The paper explains that a single head can suffer from averaging that inhibits this ability.",
+    "reference_context": [
+      "Multi-head attention allows the model to jointly attend to information from different representation subspaces at different positions. With a single attention head, averaging inhibits this.",
+      "The queries, keys and values are linearly projected h times with different, learned linear projections. Attention is performed in parallel on each projected version; the outputs are concatenated and once again projected."
+    ]
+  },
+  {
+    "question": "What is the difference between self-attention and cross-attention?",
+    "relevant_pages": [
+      2,
+      3,
+      5
+    ],
+    "expected_answer": "In self-attention, queries, keys and values come from the same sequence representation. In the Transformer encoder, they come from the previous encoder layer; in the decoder, they come from the previous decoder layer. In encoder–decoder attention (cross-attention), queries come from the previous decoder layer, while keys and values come from the encoder output.",
+    "reference_context": [
+      "In encoder-decoder attention layers, the queries come from the previous decoder layer, and the memory keys and values come from the output of the encoder.",
+      "In a self-attention layer all of the keys, values and queries come from the same place. Each position can attend to all positions in the previous layer of the same stack."
+    ]
+  },
+  {
+    "question": "How does positional encoding represent token positions?",
+    "relevant_pages": [
+      6,
+      8,
+      9
+    ],
+    "expected_answer": "The Transformer adds positional encodings to token embeddings at the bottoms of the encoder and decoder stacks. Each positional encoding has the same dimension as the embeddings, allowing them to be summed. In the paper, each dimension uses a sinusoid whose value depends on the token position and the dimension's frequency.",
+    "reference_context": [
+      "We add positional encodings to the input embeddings at the bottoms of the encoder and decoder stacks. The positional encodings have the same dimension d_model as the embeddings, so that the two can be summed.",
+      "Each dimension of the positional encoding corresponds to a sinusoid. The wavelengths form a geometric progression from 2π to 10000 · 2π."
+    ]
+  },
+  {
+    "question": "Why are sine and cosine functions used for positional encoding?",
+    "relevant_pages": [
+      6,
+      9
+    ],
+    "expected_answer": "The authors chose sine and cosine functions because they hypothesized that the representation would make it easier for the model to learn to attend by relative positions: for any fixed offset, the positional encoding at the shifted position can be represented as a linear function of the original positional encoding. They also noted that sinusoidal encodings may allow extrapolation to sequence lengths longer than those seen during training.",
+    "reference_context": [
+      "We chose this function because we hypothesized it would allow the model to easily learn to attend by relative positions, since for any fixed offset k, PE(pos+k) can be represented as a linear function of PE(pos).",
+      "We chose the sinusoidal version because it may allow the model to extrapolate to sequence lengths longer than the ones encountered during training."
+    ]
+  },
+  {
+    "question": "What is masked multi-head attention?",
+    "relevant_pages": [
+      3,
+      5
+    ],
+    "expected_answer": "In the Transformer decoder, masked self-attention prevents a position from attending to subsequent positions. The model implements this by masking illegal connections before softmax, setting their scores to negative infinity. In multi-head attention, this masked attention operation is performed independently across the heads.",
+    "reference_context": [
+      "We modify the self-attention sub-layer in the decoder stack to prevent positions from attending to subsequent positions.",
+      "We implement this inside of scaled dot-product attention by masking out (setting to −∞) all values in the input of the softmax which correspond to illegal connections."
+    ]
+  },
+  {
+    "question": "Why does the decoder use masking?",
+    "relevant_pages": [
+      3,
+      5
+    ],
+    "expected_answer": "The decoder uses masking to preserve the autoregressive property. A prediction at position i must depend only on known outputs at positions before i, not on future tokens. Masking prevents attention from flowing to subsequent positions.",
+    "reference_context": [
+      "This masking, combined with the fact that the output embeddings are offset by one position, ensures that the predictions for position i can depend only on the known outputs at positions less than i.",
+      "We need to prevent leftward information flow in the decoder to preserve the auto-regressive property. We implement this ... by masking out ... all values ... which correspond to illegal connections."
+    ]
+  },
+  {
+    "question": "What is the purpose of residual connections in the Transformer?",
+    "relevant_pages": [
+      3,
+      8
+    ],
+    "expected_answer": "The paper uses residual connections around each encoder and decoder sub-layer. The sub-layer input is added to the sub-layer output before layer normalization, giving LayerNorm(x + Sublayer(x)). The residual connection provides a direct path for the input through each sub-layer.",
+    "reference_context": [
+      "We employ a residual connection around each of the two sub-layers, followed by layer normalization. That is, the output of each sub-layer is LayerNorm(x + Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer itself.",
+      "In the decoder, residual connections are employed around each of the sub-layers, followed by layer normalization."
+    ]
+  },
+  {
+    "question": "Why is layer normalization used in the Transformer?",
+    "relevant_pages": [
+      3,
+      8,
+      10
+    ],
+    "expected_answer": "The paper specifies that layer normalization follows each residual addition in the encoder and decoder, using LayerNorm(x + Sublayer(x)). It describes where and how layer normalization is applied, but does not provide a detailed explanation of its motivation.",
+    "reference_context": [
+      "We employ a residual connection around each of the two sub-layers, followed by layer normalization. That is, the output of each sub-layer is LayerNorm(x + Sublayer(x)).",
+      "Similar to the encoder, we employ residual connections around each of the sub-layers, followed by layer normalization."
+    ]
+  },
+  {
+    "question": "What is the role of the feed-forward network in each Transformer layer?",
+    "relevant_pages": [
+      3,
+      5
+    ],
+    "expected_answer": "Each encoder and decoder layer contains a position-wise feed-forward network in addition to its attention sub-layer or sub-layers. It is applied separately and identically at every position and consists of two linear transformations with a ReLU activation between them.",
+    "reference_context": [
+      "Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position-wise fully connected feed-forward network.",
+      "The feed-forward network is applied to each position separately and identically. It consists of two linear transformations with a ReLU activation in between."
+    ]
+  },
+  {
+    "question": "How does the Transformer differ from recurrent neural networks?",
+    "relevant_pages": [
+      6,
+      7,
+      10
+    ],
+    "expected_answer": "The Transformer uses attention rather than recurrence to connect sequence positions. Unlike recurrent networks, which compute hidden states sequentially and require O(n) sequential operations, self-attention connects all positions with O(1) sequential operations. This makes the Transformer more parallelizable during training. The paper also notes that self-attention has O(n² · d) per-layer complexity.",
+    "reference_context": [
+      "Recurrent models typically factor computation along the symbol positions ... This inherently sequential nature precludes parallelization within training examples.",
+      "A self-attention layer connects all positions with a constant number of sequentially executed operations, whereas a recurrent layer requires O(n) sequential operations.",
+      "The Transformer ... relying entirely on self-attention ... without using sequence-aligned RNNs or convolution."
+    ]
+  },
+  {
+    "question": "What are the computational advantages of self-attention?",
+    "relevant_pages": [
+      2,
+      6,
+      7
+    ],
+    "expected_answer": "Self-attention can connect any pair of positions with a constant number of sequential operations, allowing greater parallelization than recurrent layers. Its maximum path length between positions is O(1), compared with O(n) for recurrent layers. The paper reports per-layer complexity O(n² · d) for self-attention and O(n · d²) for recurrent layers, and notes that self-attention is faster when sequence length n is smaller than representation dimension d.",
+    "reference_context": [
+      "In the Transformer this is reduced to a constant number of operations.",
+      "For self-attention, complexity per layer is O(n² · d), sequential operations are O(1), and maximum path length is O(1). For recurrent layers, these are O(n · d²), O(n), and O(n), respectively.",
+      "Self-attention layers are faster than recurrent layers when the sequence length n is smaller than the representation dimensionality d."
+    ]
+  },
+  {
+    "question": "What are the limitations of self-attention compared with recurrent layers?",
+    "relevant_pages": [
+      6,
+      7
+    ],
+    "expected_answer": "The paper identifies a key limitation: self-attention has O(n² · d) per-layer complexity, so its cost grows quadratically with sequence length. It is faster than recurrent layers when n is smaller than d, but this advantage does not necessarily hold for very long sequences. The paper discusses restricting attention to a neighborhood as a possible way to improve performance on very long sequences.",
+    "reference_context": [
+      "Self-attention layers are faster than recurrent layers when the sequence length n is smaller than the representation dimensionality d.",
+      "To improve computational performance for tasks involving very long sequences, self-attention could be restricted to considering only a neighborhood of size r in the input sequence.",
+      "The table gives self-attention per-layer complexity O(n² · d), compared with O(n · d²) for recurrent layers."
+    ]
+  }
+]
