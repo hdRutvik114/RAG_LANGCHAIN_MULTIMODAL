@@ -7,7 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 from litellm import OpenAI as LiteLLMClient
-
+from litellm import OpenAI as LiteLLMClient
 from ragas.llms import llm_factory
 from ragas.embeddings import GoogleEmbeddings
 from ragas.metrics.collections import (
@@ -50,7 +50,7 @@ def initialize_evaluator():
     # Client for Gemini LLM evaluation through LiteLLM
     llm_client = LiteLLMClient(
         api_key=api_key,
-        model=model_name,
+        # model=model_name -> no need to send model name here, as it will be specified in llm_factory
     )
 
     llm = llm_factory(
